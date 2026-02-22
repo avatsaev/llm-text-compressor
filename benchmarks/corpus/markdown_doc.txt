@@ -1,0 +1,96 @@
+# API Reference
+
+## Overview
+
+The `llm-text-compressor` library provides functions to compress text by removing
+unnecessary characters while maintaining readability for Large Language Models.
+This is particularly useful for reducing token consumption in LLM API calls.
+
+## Core Functions
+
+### `compress(text, level=2, normalize=True, preserve_patterns=None, preserve_words=None, markdown=False, locale=None)`
+
+Compress text by removing characters based on the specified compression level.
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `text` | `str` | *required* | Input text to compress |
+| `level` | `int` | `2` | Compression aggressiveness (1-4) |
+| `normalize` | `bool` | `True` | Whether to normalize whitespace |
+| `preserve_patterns` | `list[str]` | `None` | Custom regex patterns to preserve |
+| `preserve_words` | `set[str]` | `None` | Custom words to preserve |
+| `markdown` | `bool` | `False` | Preserve markdown syntax |
+| `locale` | `str` | `None` | Language code for locale-specific handling |
+
+**Returns:** `str` - Compressed text
+
+**Example:**
+
+```python
+from llm_text_compressor import compress
+
+# Basic compression
+result = compress("Understanding artificial intelligence", level=2)
+print(result)  # "Undrstandng artfcl intlignce"
+
+# With markdown preservation
+result = compress("## Introduction\n\nThis is important", markdown=True)
+print(result)  # "## Introduction\n\nThis is imprtnt"
+```
+
+### `compress_with_stats(text, level=2, ...)`
+
+Same as `compress()` but returns a `CompressionResult` object with detailed statistics.
+
+**Returns:** `CompressionResult` with fields:
+- `text` - Compressed text
+- `original_length` - Length of original text
+- `compressed_length` - Length of compressed text
+- `ratio` - Compression ratio (0.0 to 1.0)
+- `savings_pct` - Percentage of characters saved
+- `level` - Compression level used
+- `preserved_spans` - Tuple of `PreservedSpan` objects
+
+### `compress_stream(chunks, level=2, ...)`
+
+Stream-compress text from an iterable of chunks.
+
+**Parameters:**
+- `chunks` - Iterable of text chunks
+- `buffer_size` - Target buffer size before yielding (default: 4096)
+
+**Yields:** Compressed text chunks
+
+### `compress_file(file_path, level=2, ...)`
+
+Stream-compress a file and yield compressed chunks.
+
+**Parameters:**
+- `file_path` - Path to the file
+- `chunk_size` - Read chunk size (default: 8192)
+- `encoding` - File encoding (default: "utf-8")
+
+**Yields:** Compressed text chunks
+
+## Compression Levels
+
+1. **Level 1** (Light): Remove doubled letters (`letter` → `leter`)
+2. **Level 2** (Medium): Remove doubled letters + interior vowels (`letter` → `ltr`)
+3. **Level 3** (Heavy): All of above + aggressive trimming of long words
+4. **Level 4** (Maximum): All of above + filler phrase removal + line deduplication
+
+## Preserved Content
+
+The following content types are automatically preserved:
+- Email addresses (e.g., `user@example.com`)
+- URLs (e.g., `https://example.com`)
+- Phone numbers (e.g., `+1-555-123-4567`)
+- UUIDs (e.g., `550e8400-e29b-41d4-a716-446655440000`)
+- Hex and alphanumeric IDs
+- Proper nouns and acronyms (e.g., `NASA`, `John`)
+- Code blocks (fenced and inline)
+- JSON and XML structures
+
+For more information, visit [the documentation](https://github.com/avatsaev/llm-text-compressor).

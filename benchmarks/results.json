@@ -1,0 +1,320 @@
+{
+  "timestamp": "2026-02-22T14:08:53.779198+00:00",
+  "python_version": "3.13.9",
+  "platform": "Linux-6.17.9-1-pve-x86_64-with-glibc2.41",
+  "iterations": 10,
+  "markdown": false,
+  "locale": null,
+  "files": [
+    {
+      "filename": "chat_conversation.txt",
+      "original_chars": 898,
+      "levels": [
+        {
+          "level": 1,
+          "original_chars": 898,
+          "compressed_chars": 891,
+          "ratio": 0.9922048997772829,
+          "savings_pct": 0.7795100222717122,
+          "mean_time_ms": 0.274837100005243,
+          "median_time_ms": 0.22562399954040302,
+          "min_time_ms": 0.2210749989899341,
+          "max_time_ms": 0.6778730003134115,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 2,
+          "original_chars": 898,
+          "compressed_chars": 825,
+          "ratio": 0.9187082405345212,
+          "savings_pct": 8.129175946547884,
+          "mean_time_ms": 0.24374170043302001,
+          "median_time_ms": 0.24154849961632863,
+          "min_time_ms": 0.23823700030334294,
+          "max_time_ms": 0.25783400087675545,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 3,
+          "original_chars": 898,
+          "compressed_chars": 815,
+          "ratio": 0.9075723830734966,
+          "savings_pct": 9.242761692650337,
+          "mean_time_ms": 0.2420756998617435,
+          "median_time_ms": 0.2413534984953003,
+          "min_time_ms": 0.23825800053600688,
+          "max_time_ms": 0.24778599981800653,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 4,
+          "original_chars": 898,
+          "compressed_chars": 741,
+          "ratio": 0.8251670378619154,
+          "savings_pct": 17.483296213808465,
+          "mean_time_ms": 0.4093275998457102,
+          "median_time_ms": 0.332119000631792,
+          "min_time_ms": 0.31209600092552137,
+          "max_time_ms": 0.7535749991802732,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        }
+      ]
+    },
+    {
+      "filename": "code_mixed.txt",
+      "original_chars": 3115,
+      "levels": [
+        {
+          "level": 1,
+          "original_chars": 3115,
+          "compressed_chars": 3099,
+          "ratio": 0.9948635634028893,
+          "savings_pct": 0.5136436597110716,
+          "mean_time_ms": 0.6891691002238076,
+          "median_time_ms": 0.6775769998057513,
+          "min_time_ms": 0.6623740009672474,
+          "max_time_ms": 0.7437169988406822,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 2,
+          "original_chars": 3115,
+          "compressed_chars": 2986,
+          "ratio": 0.9585874799357945,
+          "savings_pct": 4.141252006420548,
+          "mean_time_ms": 0.6960941000215826,
+          "median_time_ms": 0.6965174989090883,
+          "min_time_ms": 0.6874310001876438,
+          "max_time_ms": 0.7065469999361085,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 3,
+          "original_chars": 3115,
+          "compressed_chars": 2936,
+          "ratio": 0.9425361155698234,
+          "savings_pct": 5.746388443017658,
+          "mean_time_ms": 0.716959700184816,
+          "median_time_ms": 0.7143569991967524,
+          "min_time_ms": 0.6968090001464589,
+          "max_time_ms": 0.7376450012088753,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 4,
+          "original_chars": 3115,
+          "compressed_chars": 2775,
+          "ratio": 0.8908507223113965,
+          "savings_pct": 10.91492776886035,
+          "mean_time_ms": 1.02156869997998,
+          "median_time_ms": 1.0153970006285817,
+          "min_time_ms": 0.9925340000336291,
+          "max_time_ms": 1.0760509994724998,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        }
+      ]
+    },
+    {
+      "filename": "log_output.txt",
+      "original_chars": 3664,
+      "levels": [
+        {
+          "level": 1,
+          "original_chars": 3664,
+          "compressed_chars": 3633,
+          "ratio": 0.9915393013100436,
+          "savings_pct": 0.8460698689956359,
+          "mean_time_ms": 1.0644381001839065,
+          "median_time_ms": 1.0530074996495387,
+          "min_time_ms": 1.0415460001240717,
+          "max_time_ms": 1.1160960002598586,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 2,
+          "original_chars": 3664,
+          "compressed_chars": 3369,
+          "ratio": 0.9194868995633187,
+          "savings_pct": 8.051310043668124,
+          "mean_time_ms": 1.2053098000251339,
+          "median_time_ms": 1.127983500737173,
+          "min_time_ms": 1.1047249990951968,
+          "max_time_ms": 1.6666000010445714,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 3,
+          "original_chars": 3664,
+          "compressed_chars": 3307,
+          "ratio": 0.9025655021834061,
+          "savings_pct": 9.743449781659386,
+          "mean_time_ms": 1.6897042998607503,
+          "median_time_ms": 1.801923999664723,
+          "min_time_ms": 1.1937819999729982,
+          "max_time_ms": 2.2108520006440813,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 4,
+          "original_chars": 3664,
+          "compressed_chars": 3298,
+          "ratio": 0.9001091703056768,
+          "savings_pct": 9.989082969432317,
+          "mean_time_ms": 1.5651493000405026,
+          "median_time_ms": 1.5619635005350574,
+          "min_time_ms": 1.543438998851343,
+          "max_time_ms": 1.6008759994292632,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        }
+      ]
+    },
+    {
+      "filename": "markdown_doc.txt",
+      "original_chars": 3328,
+      "levels": [
+        {
+          "level": 1,
+          "original_chars": 3328,
+          "compressed_chars": 3300,
+          "ratio": 0.9915865384615384,
+          "savings_pct": 0.8413461538461564,
+          "mean_time_ms": 1.0398700998848653,
+          "median_time_ms": 1.0345829996367684,
+          "min_time_ms": 1.0198349991696887,
+          "max_time_ms": 1.072114000635338,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 2,
+          "original_chars": 3328,
+          "compressed_chars": 3103,
+          "ratio": 0.9323918269230769,
+          "savings_pct": 6.760817307692313,
+          "mean_time_ms": 1.1929967000469333,
+          "median_time_ms": 1.098447999538621,
+          "min_time_ms": 1.0736269996414194,
+          "max_time_ms": 1.5844659992581,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 3,
+          "original_chars": 3328,
+          "compressed_chars": 3056,
+          "ratio": 0.9182692307692307,
+          "savings_pct": 8.173076923076927,
+          "mean_time_ms": 1.0955808998915018,
+          "median_time_ms": 1.079988500350737,
+          "min_time_ms": 1.069599000402377,
+          "max_time_ms": 1.22701500004041,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 4,
+          "original_chars": 3328,
+          "compressed_chars": 3031,
+          "ratio": 0.9107572115384616,
+          "savings_pct": 8.924278846153843,
+          "mean_time_ms": 1.5004160000898992,
+          "median_time_ms": 1.4907545009918977,
+          "min_time_ms": 1.4476590004051104,
+          "max_time_ms": 1.581269998496282,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        }
+      ]
+    },
+    {
+      "filename": "prose.txt",
+      "original_chars": 3425,
+      "levels": [
+        {
+          "level": 1,
+          "original_chars": 3425,
+          "compressed_chars": 3389,
+          "ratio": 0.9894890510948905,
+          "savings_pct": 1.0510948905109507,
+          "mean_time_ms": 1.0380425999755971,
+          "median_time_ms": 1.0262874993713922,
+          "min_time_ms": 1.0191849996772362,
+          "max_time_ms": 1.1251029991399264,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 2,
+          "original_chars": 3425,
+          "compressed_chars": 2768,
+          "ratio": 0.8081751824817518,
+          "savings_pct": 19.18248175182482,
+          "mean_time_ms": 1.1891273001310765,
+          "median_time_ms": 1.184078500045871,
+          "min_time_ms": 1.1769899992941646,
+          "max_time_ms": 1.2149720005254494,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 3,
+          "original_chars": 3425,
+          "compressed_chars": 2508,
+          "ratio": 0.7322627737226277,
+          "savings_pct": 26.77372262773723,
+          "mean_time_ms": 1.2075480002749828,
+          "median_time_ms": 1.2029945000904263,
+          "min_time_ms": 1.1971490002906648,
+          "max_time_ms": 1.2265139994269703,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        },
+        {
+          "level": 4,
+          "original_chars": 3425,
+          "compressed_chars": 2501,
+          "ratio": 0.7302189781021898,
+          "savings_pct": 26.978102189781016,
+          "mean_time_ms": 1.7425406000256771,
+          "median_time_ms": 1.6009670007406385,
+          "min_time_ms": 1.5523549991485197,
+          "max_time_ms": 2.366333999816561,
+          "original_tokens": null,
+          "compressed_tokens": null,
+          "token_savings_pct": null
+        }
+      ]
+    }
+  ]
+}

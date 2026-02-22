@@ -1,0 +1,109 @@
+The following documentation explains how to configure the authentication middleware
+for the application server. Please follow these instructions carefully.
+
+## Installation
+
+First, install the required dependencies using pip:
+
+```python
+pip install fastapi uvicorn python-jose[cryptography] passlib[bcrypt]
+```
+
+## Configuration
+
+Create a configuration file at `config/auth.yaml` with the following structure:
+
+```yaml
+auth:
+  secret_key: "your-secret-key-here"
+  algorithm: "HS256"
+  access_token_expire_minutes: 30
+  refresh_token_expire_days: 7
+```
+
+## Implementation
+
+Here is the main authentication module implementation:
+
+```python
+from datetime import datetime, timedelta
+from typing import Optional
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from pydantic import BaseModel
+
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+    scopes: list[str] = []
+
+
+class UserInDB(BaseModel):
+    username: str
+    email: str
+    hashed_password: str
+    disabled: bool = False
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+def create_access_token(
+    data: dict,
+    expires_delta: Optional[timedelta] = None,
+) -> str:
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_data = TokenData(username=username)
+    except JWTError:
+        raise credentials_exception
+    user = get_user(db, username=token_data.username)
+    if user is None:
+        raise credentials_exception
+    return user
+```
+
+## API Endpoints
+
+The following endpoints are available for authentication:
+
+- `POST /token` - Obtain an access token by providing username and password
+- `POST /token/refresh` - Refresh an expired access token
+- `GET /users/me` - Get the current authenticated user's profile
+- `PUT /users/me` - Update the current user's profile information
+
+For more information, contact the development team at dev@example.com or visit
+https://docs.example.com/auth/guide for the complete API reference.
+
+Request ID for this documentation: doc-auth-2024-abc123def456

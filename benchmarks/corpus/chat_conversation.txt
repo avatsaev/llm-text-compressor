@@ -1,0 +1,23 @@
+System: You are a helpful AI assistant specialized in software engineering. You help users debug code, explain concepts, and provide best practices. Always be concise and accurate in your responses.
+
+User: I'm having trouble with my Python application. The database queries are running really slowly and I can't figure out why. Here's my current code:
+
+```python
+def get_user_orders(user_id: str):
+    connection = psycopg2.connect(
+        host="localhost",
+        database="myapp",
+        user="admin",
+        password="secret123"
+    )
+    cursor = connection.cursor()
+    orders = []
+    for order_id in get_all_order_ids(user_id):
+        cursor.execute(f"SELECT * FROM orders WHERE id = {order_id}")
+        order = cursor.fetchone()
+        orders.append(order)
+    connection.close()
+    return orders
+```
+
+The function sometimes takes over 30 seconds to complete. What am I doing wrong?
