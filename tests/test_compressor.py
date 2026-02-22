@@ -5,12 +5,11 @@ import re
 import pytest
 
 from llm_text_compressor import (
-    compress,
-    compress_with_stats,
-    compress_stream,
-    compress_file,
     CompressionResult,
-    PreservedSpan,
+    compress,
+    compress_file,
+    compress_stream,
+    compress_with_stats,
 )
 
 
@@ -562,7 +561,7 @@ class TestMarkdownMode:
 
     def test_nested_markdown_structures(self):
         text = """# Main Title
-        
+
 - Item with [link](https://example.com)
 - Another item
   - Nested item
@@ -707,12 +706,12 @@ class TestStreamCompression:
     def test_stream_equals_non_stream(self):
         text = "The understanding of artificial intelligence requires significant computational resources."
         chunks = [text[i:i+10] for i in range(0, len(text), 10)]
-        
+
         # Streaming result
         stream_result = "".join(compress_stream(chunks, level=2))
         # Non-streaming result
         direct_result = compress(text, level=2)
-        
+
         assert stream_result == direct_result
 
     def test_stream_with_single_chunk(self):
@@ -769,7 +768,7 @@ class TestStreamCompression:
         test_file = tmp_path / "test.txt"
         content = "This is a test file with understanding and significant content that needs compression."
         test_file.write_text(content)
-        
+
         # Stream compress the file
         result = "".join(compress_file(str(test_file), level=2))
         expected = compress(content, level=2)
@@ -781,7 +780,7 @@ class TestStreamCompression:
         line = "The understanding of artificial intelligence requires computational resources. "
         content = line * 100  # ~8KB
         test_file.write_text(content)
-        
+
         # Stream compress with small chunks
         result = "".join(compress_file(str(test_file), level=2, chunk_size=512))
         # Verify compression happened
@@ -798,11 +797,11 @@ class TestStreamCompression:
     def test_stream_different_buffer_sizes(self):
         text = "The quick brown fox jumps over the lazy dog. " * 20
         chunks = [text[i:i+20] for i in range(0, len(text), 20)]
-        
+
         # Different buffer sizes should produce compressed output
         result_small = "".join(compress_stream(chunks, level=2, buffer_size=100))
         result_large = "".join(compress_stream(chunks, level=2, buffer_size=1000))
-        
+
         # Both should compress the text
         assert len(result_small) < len(text)
         assert len(result_large) < len(text)
@@ -826,7 +825,7 @@ class TestSentencePruning:
         text = "This is a line\nThis is a line\nThis is different"
         result = compress(text, level=4)
         # Consecutive duplicate lines should be removed
-        lines = [l for l in result.split("\n") if l.strip()]
+        lines = [line for line in result.split("\n") if line.strip()]
         # Should have 2 non-empty lines (duplicates removed)
         assert len(lines) == 2
 
@@ -848,7 +847,7 @@ class TestSentencePruning:
     def test_invalid_level_raises_error(self):
         with pytest.raises(ValueError, match="Compression level must be 1-4"):
             compress("test", level=0)
-        
+
         with pytest.raises(ValueError, match="Compression level must be 1-4"):
             compress("test", level=5)
 
@@ -877,7 +876,10 @@ class TestSentencePruning:
         assert len(result) < len(text)
 
     def test_level_4_with_compressor_off(self):
-        text = "I think this text needs compression. [COMPRESSOR_OFF]Preserve this exactly![/COMPRESSOR_OFF] More text here."
+        text = (
+            "I think this text needs compression. "
+            "[COMPRESSOR_OFF]Preserve this exactly![/COMPRESSOR_OFF] More text here."
+        )
         result = compress(text, level=4)
         # Content in COMPRESSOR_OFF preserved
         assert "Preserve this exactly!" in result

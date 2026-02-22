@@ -1,25 +1,28 @@
 """Core compression logic."""
 
+from __future__ import annotations
+
 import dataclasses
 import re
+from collections.abc import Generator, Iterable
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class PreservedSpan:
     """A span of text that was preserved intact during compression."""
-    
+
     start: int         # position in the COMPRESSED output
     end: int           # position in the COMPRESSED output
     text: str          # the preserved content
-    kind: str          # type: "url" | "email" | "phone" | "uuid" | "hex_id" | "alphanum_id" | 
-                       # "proper_noun" | "acronym" | "compressor_off" | "fenced_code" | 
-                       # "inline_code" | "json" | "xml" | "preserve"
+    kind: str          # kind: "url", "email", "phone", "uuid", "hex_id", "alphanum_id",
+                       # "proper_noun", "acronym", "compressor_off", "fenced_code",
+                       # "inline_code", "json", "xml", "preserve"
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class CompressionResult:
     """Result of compression with detailed statistics."""
-    
+
     text: str                              # the compressed text
     original_length: int                   # len(original input)
     compressed_length: int                 # len(text)
@@ -27,7 +30,7 @@ class CompressionResult:
     savings_pct: float                     # (1 - ratio) * 100
     level: int                             # compression level used
     preserved_spans: tuple[PreservedSpan, ...]  # what was kept intact
-    
+
     def __str__(self) -> str:
         return self.text
 
@@ -158,13 +161,13 @@ _PRESERVE_PATTERNS = re.compile(
 
 def _find_balanced_end(text: str, start: int, open_char: str, close_char: str) -> int | None:
     """Find the matching closing character for a balanced structure.
-    
+
     Args:
         text: The text to search in.
         start: Position just after the opening character.
         open_char: Opening character (e.g., '{', '[', '<').
         close_char: Closing character (e.g., '}', ']', '>').
-    
+
     Returns:
         Position of the matching closing character, or None if not found.
     """
@@ -172,10 +175,10 @@ def _find_balanced_end(text: str, start: int, open_char: str, close_char: str) -
     i = start
     in_string = False
     escape = False
-    
+
     while i < len(text) and count > 0:
         ch = text[i]
-        
+
         # Handle string literals (for JSON)
         if ch == '"' and not escape and open_char in '{[':
             in_string = not in_string
@@ -183,41 +186,41 @@ def _find_balanced_end(text: str, start: int, open_char: str, close_char: str) -
             escape = not escape
             i += 1
             continue
-        
+
         if not in_string:
             if ch == open_char:
                 count += 1
             elif ch == close_char:
                 count -= 1
-        
+
         escape = False
         i += 1
-    
+
     return i if count == 0 else None
 
 
 def _find_json_block(text: str, start: int) -> tuple[int, int] | None:
     """Try to find a JSON object or array starting at position start.
-    
+
     Returns:
         (start, end) tuple if valid JSON-like block found, None otherwise.
     """
     if start >= len(text):
         return None
-    
+
     open_char = text[start]
     if open_char not in '{[':
         return None
-    
+
     # Only treat as JSON if followed by " or digit (to avoid matching plain prose like "[word]")
     if start + 1 < len(text):
         next_chars = text[start + 1:start + 10].lstrip()
         if next_chars and next_chars[0] not in '"{[0123456789-tfn':  # JSON value starters
             return None
-    
+
     close_char = '}' if open_char == '{' else ']'
     end = _find_balanced_end(text, start + 1, open_char, close_char)
-    
+
     if end:
         return (start, end)
     return None
@@ -225,51 +228,51 @@ def _find_json_block(text: str, start: int) -> tuple[int, int] | None:
 
 def _find_xml_block(text: str, start: int) -> tuple[int, int] | None:
     """Try to find an XML/HTML block starting at position start.
-    
+
     Returns:
         (start, end) tuple if valid XML-like block found, None otherwise.
     """
     if start >= len(text) or text[start] != '<':
         return None
-    
+
     # Match opening tag
     tag_match = re.match(r'<([a-zA-Z][a-zA-Z0-9]*)[^>]*>', text[start:])
     if not tag_match:
         return None
-    
+
     tag_name = tag_match.group(1)
     tag_end = start + tag_match.end()
-    
+
     # Check for self-closing tag
     if text[start:tag_end].rstrip().endswith('/>'):
         return (start, tag_end)
-    
+
     # Find matching closing tag
     close_pattern = f'</{tag_name}>'
     close_pos = text.find(close_pattern, tag_end)
-    
+
     if close_pos != -1:
         return (start, close_pos + len(close_pattern))
-    
+
     return None
 
 
 def _extract_structured_data_spans(text: str) -> list[tuple[int, int, str]]:
     """Extract all structured data spans (code blocks, JSON, XML).
-    
+
     Returns:
         List of (start, end, kind) tuples sorted by start position.
     """
     spans: list[tuple[int, int, str]] = []
-    
+
     # Fenced code blocks
     for match in _FENCED_CODE_RE.finditer(text):
         spans.append((match.start(), match.end(), "fenced_code"))
-    
+
     # Inline code
     for match in _INLINE_CODE_RE.finditer(text):
         spans.append((match.start(), match.end(), "inline_code"))
-    
+
     # JSON blocks (scan for { and [ that look like JSON)
     i = 0
     while i < len(text):
@@ -281,7 +284,7 @@ def _extract_structured_data_spans(text: str) -> list[tuple[int, int, str]]:
                 i = end
                 continue
         i += 1
-    
+
     # XML/HTML blocks
     i = 0
     while i < len(text):
@@ -293,10 +296,10 @@ def _extract_structured_data_spans(text: str) -> list[tuple[int, int, str]]:
                 i = end
                 continue
         i += 1
-    
+
     # Sort by start position and merge overlapping spans
     spans.sort(key=lambda x: x[0])
-    
+
     # Remove overlaps (keep earlier/longer spans)
     merged: list[tuple[int, int, str]] = []
     for span in spans:
@@ -310,7 +313,7 @@ def _extract_structured_data_spans(text: str) -> list[tuple[int, int, str]]:
                 break
         if not overlaps:
             merged.append(span)
-    
+
     return merged
 
 
@@ -322,28 +325,26 @@ def _compress_markdown(
     preserve_words: set[str] | None = None,
 ) -> str:
     """Compress text while preserving markdown syntax.
-    
+
     Markdown elements like headings, links, lists, etc. have their markers preserved,
     but the text content is still compressed.
-    
+
     Args:
         text: Text to compress.
         level: Compression level.
         collect_spans: Optional span collection list.
         custom_patterns: Optional custom regex patterns.
         preserve_words: Optional custom word set.
-    
+
     Returns:
         Compressed markdown text.
     """
-    result: list[str] = []
-    pos = 0
     compressed_offset = 0
-    
+
     # Process line by line to handle markdown line-based syntax
     lines = text.split("\n")
     compressed_lines: list[str] = []
-    
+
     for line_idx, line in enumerate(lines):
         # Horizontal rules - preserve entirely
         if _MD_HR_RE.match(line):
@@ -356,7 +357,7 @@ def _compress_markdown(
                 ))
             compressed_offset += len(line) + (1 if line_idx < len(lines) - 1 else 0)
             continue
-        
+
         # Headings - preserve markers, compress text
         heading_match = _MD_HEADING_RE.match(line)
         if heading_match:
@@ -370,7 +371,7 @@ def _compress_markdown(
             compressed_lines.append(compressed_line)
             compressed_offset += len(compressed_line) + (1 if line_idx < len(lines) - 1 else 0)
             continue
-        
+
         # List items - preserve markers, compress text
         list_match = _MD_LIST_RE.match(line)
         if list_match:
@@ -383,7 +384,7 @@ def _compress_markdown(
             compressed_lines.append(compressed_line)
             compressed_offset += len(compressed_line) + (1 if line_idx < len(lines) - 1 else 0)
             continue
-        
+
         # Blockquotes - preserve markers, compress text
         quote_match = _MD_BLOCKQUOTE_RE.match(line)
         if quote_match:
@@ -396,12 +397,12 @@ def _compress_markdown(
             compressed_lines.append(compressed_line)
             compressed_offset += len(compressed_line) + (1 if line_idx < len(lines) - 1 else 0)
             continue
-        
+
         # For other lines, handle inline markdown like links
         # Links: [text](url) - compress text, preserve url
         line_result = []
         line_pos = 0
-        
+
         for link_match in _MD_LINK_RE.finditer(line):
             # Add text before link (compressed)
             if link_match.start() > line_pos:
@@ -410,24 +411,24 @@ def _compress_markdown(
                     before_text, level, None, custom_patterns, preserve_words
                 )
                 line_result.append(compressed_before)
-            
+
             # Handle link: compress link text, preserve URL
             is_image = link_match.group(0).startswith("!")
             link_text = link_match.group(1)
             url = link_match.group(2)
-            
+
             compressed_link_text = _compress_with_preserve_patterns(
                 link_text, level, None, custom_patterns, preserve_words
             )
-            
+
             # Reconstruct link
             if is_image:
                 line_result.append(f"![{compressed_link_text}]({url})")
             else:
                 line_result.append(f"[{compressed_link_text}]({url})")
-            
+
             line_pos = link_match.end()
-        
+
         # Add remaining text after last link
         if line_pos < len(line):
             remaining = line[line_pos:]
@@ -435,13 +436,13 @@ def _compress_markdown(
                 remaining, level, None, custom_patterns, preserve_words
             )
             line_result.append(compressed_remaining)
-        
+
         compressed_line = "".join(line_result) if line_result else _compress_with_preserve_patterns(
             line, level, None, custom_patterns, preserve_words
         )
         compressed_lines.append(compressed_line)
         compressed_offset += len(compressed_line) + (1 if line_idx < len(lines) - 1 else 0)
-    
+
     return "\n".join(compressed_lines)
 
 
@@ -496,7 +497,7 @@ def _is_proper_noun(word: str) -> bool:
 
 def _compress_word(word: str, level: int, preserve_words: set[str] | None = None) -> str:
     """Compress a single word according to the given level.
-    
+
     Args:
         word: Word to compress.
         level: Compression level.
@@ -504,7 +505,7 @@ def _compress_word(word: str, level: int, preserve_words: set[str] | None = None
     """
     # Merge built-in and custom preserve words
     effective_preserve_words = _PRESERVE_WORDS if preserve_words is None else _PRESERVE_WORDS | preserve_words
-    
+
     if len(word) <= 3 or word.lower() in effective_preserve_words:
         return word
 
@@ -536,28 +537,28 @@ def _compress_word(word: str, level: int, preserve_words: set[str] | None = None
 
 def _prune_sentences(text: str) -> str:
     """Apply sentence-level pruning for level 4 compression.
-    
+
     This removes filler phrases and deduplicates lines to achieve maximum compression
     while maintaining semantic content.
-    
+
     Args:
         text: Text to prune.
-    
+
     Returns:
         Pruned text with filler phrases removed and lines deduplicated.
     """
     # Remove filler phrases
     for pattern in _FILLER_PHRASES:
         text = re.sub(pattern, " ", text, flags=re.IGNORECASE)
-    
+
     # Collapse multiple spaces
     text = re.sub(r" {2,}", " ", text)
-    
+
     # Deduplicate consecutive lines (case-insensitive)
     lines = text.split("\n")
     deduped: list[str] = []
     prev_normalized = ""
-    
+
     for line in lines:
         # Normalize for comparison (lowercase, strip)
         normalized = line.strip().lower()
@@ -567,13 +568,13 @@ def _prune_sentences(text: str) -> str:
         elif not normalized:
             # Keep blank lines but don't update prev
             deduped.append(line)
-    
+
     return "\n".join(deduped)
 
 
 def _normalize_whitespace(text: str) -> str:
     """Normalize whitespace by collapsing runs and limiting blank lines.
-    
+
     - Strips trailing whitespace per line
     - Collapses runs of spaces/tabs to single space (preserving leading indent)
     - Collapses 3+ consecutive blank lines to 2 blank lines
@@ -582,7 +583,7 @@ def _normalize_whitespace(text: str) -> str:
     lines = text.split("\n")
     result: list[str] = []
     blank_streak = 0
-    
+
     for line in lines:
         # Split into leading whitespace and content
         stripped = line.rstrip()
@@ -599,19 +600,19 @@ def _normalize_whitespace(text: str) -> str:
             # Collapse runs of spaces/tabs in content
             content = re.sub(r"[ \t]+", " ", content)
             result.append(leading_ws + content)
-    
+
     # Strip leading/trailing blank lines only (not whitespace)
     while result and result[0] == "":
         result.pop(0)
     while result and result[-1] == "":
         result.pop()
-    
+
     return "\n".join(result)
 
 
 def _compress_segment(segment: str, level: int, preserve_words: set[str] | None = None) -> str:
     """Compress a plain-text segment (no preserved spans inside).
-    
+
     Args:
         segment: Text segment to compress.
         level: Compression level.
@@ -628,14 +629,14 @@ def _compress_segment(segment: str, level: int, preserve_words: set[str] | None 
 
 
 def _compress_with_preserve_patterns(
-    text: str, 
+    text: str,
     level: int,
     collect_spans: list[tuple[int, int, str]] | None = None,
     custom_patterns: list[re.Pattern[str]] | None = None,
     preserve_words: set[str] | None = None,
 ) -> str:
     """Compress *text* while keeping auto-detected spans (URLs, emails, structured data, etc.) intact.
-    
+
     Args:
         text: Text to compress.
         level: Compression level.
@@ -645,22 +646,22 @@ def _compress_with_preserve_patterns(
     """
     # Collect structured data spans
     structured_spans = _extract_structured_data_spans(text)
-    
+
     # Collect custom pattern spans (checked first, higher priority)
     regex_spans: list[tuple[int, int, str]] = []
     if custom_patterns:
         for pattern in custom_patterns:
             for m in pattern.finditer(text):
                 regex_spans.append((m.start(), m.end(), "custom_pattern"))
-    
+
     # Collect built-in regex-based preserve patterns
     for m in _PRESERVE_PATTERNS.finditer(text):
         regex_spans.append((m.start(), m.end(), "preserve"))
-    
+
     # Merge all spans and sort by start position
     all_spans = structured_spans + regex_spans
     all_spans.sort(key=lambda x: x[0])
-    
+
     # Remove overlaps (keep earlier spans when there's overlap)
     merged_spans: list[tuple[int, int, str]] = []
     for span in all_spans:
@@ -673,33 +674,33 @@ def _compress_with_preserve_patterns(
                 break
         if not overlaps:
             merged_spans.append(span)
-    
+
     if not merged_spans:
         return _compress_segment(text, level, preserve_words)
-    
+
     result: list[str] = []
     prev_end = 0
     compressed_offset = 0  # Track position in compressed output
-    
+
     for start, end, kind in merged_spans:
         if start > prev_end:
             compressed_segment = _compress_segment(text[prev_end:start], level, preserve_words)
             result.append(compressed_segment)
             compressed_offset += len(compressed_segment)
-        
+
         preserved_text = text[start:end]
         result.append(preserved_text)
-        
+
         # Record the span in compressed output coordinates
         if collect_spans is not None:
             collect_spans.append((compressed_offset, compressed_offset + len(preserved_text), kind))
-        
+
         compressed_offset += len(preserved_text)
         prev_end = end
-    
+
     if prev_end < len(text):
         result.append(_compress_segment(text[prev_end:], level, preserve_words))
-    
+
     return "".join(result)
 
 
@@ -729,14 +730,14 @@ def compress(
 
     Returns:
         Compressed text string.
-    
+
     Raises:
         ValueError: If a preserve_pattern string is not a valid regex, or if level is not 1-4, or if level is not 1-4.
     """
     # Validate level
     if not (1 <= level <= 4):
         raise ValueError(f"Compression level must be 1-4, got {level}")
-    
+
     # Apply sentence pruning for level 4 before other compression
     if level == 4:
         text = _prune_sentences(text)
@@ -744,7 +745,7 @@ def compress(
         effective_level = 3
     else:
         effective_level = level
-    
+
     # Compile custom patterns
     compiled_patterns: list[re.Pattern[str]] | None = None
     if preserve_patterns:
@@ -757,23 +758,23 @@ def compress(
                     raise ValueError(f"Invalid regex pattern '{pattern}': {e}") from e
             else:
                 compiled_patterns.append(pattern)
-    
+
     # Merge locale-specific stop words with custom preserve words
     merged_preserve_words = preserve_words.copy() if preserve_words else set()
     if locale and locale in _LOCALE_STOP_WORDS:
         merged_preserve_words.update(_LOCALE_STOP_WORDS[locale])
     final_preserve_words = merged_preserve_words if merged_preserve_words else None
-    
+
     # Apply whitespace normalization first, but preserve COMPRESSOR_OFF regions
     if normalize:
         off_regions = list(_COMPRESSOR_OFF_RE.finditer(text))
-        
+
         if off_regions:
             # Normalize only the parts outside COMPRESSOR_OFF tags
             # Keep the tags and their content intact for now
             parts: list[str] = []
             prev_end = 0
-            
+
             for match in off_regions:
                 start, end = match.start(), match.end()
                 if start > prev_end:
@@ -781,64 +782,64 @@ def compress(
                 # Keep the entire match (tags + content) without normalization
                 parts.append(match.group(0))
                 prev_end = end
-            
+
             if prev_end < len(text):
                 parts.append(_normalize_whitespace(text[prev_end:]))
-            
+
             text = "".join(parts)
         else:
             text = _normalize_whitespace(text)
-    
+
     # Route to markdown-aware compression if requested
     if markdown:
         off_regions = list(_COMPRESSOR_OFF_RE.finditer(text))
         if not off_regions:
             return _compress_markdown(text, effective_level, None, compiled_patterns, final_preserve_words)
-        
+
         # Handle COMPRESSOR_OFF regions with markdown mode
-        parts: list[str] = []
+        md_parts: list[str] = []
         prev_end = 0
         for match in off_regions:
             start, end = match.start(), match.end()
             if start > prev_end:
-                parts.append(_compress_markdown(
+                md_parts.append(_compress_markdown(
                     text[prev_end:start], effective_level, None, compiled_patterns, final_preserve_words
                 ))
-            parts.append(match.group(1))
+            md_parts.append(match.group(1))
             prev_end = end
         if prev_end < len(text):
-            parts.append(_compress_markdown(
+            md_parts.append(_compress_markdown(
                 text[prev_end:], effective_level, None, compiled_patterns, final_preserve_words
             ))
-        return "".join(parts)
-    
+        return "".join(md_parts)
+
     # Handle [COMPRESSOR_OFF]...[/COMPRESSOR_OFF] regions (standard mode)
     off_regions = list(_COMPRESSOR_OFF_RE.finditer(text))
 
     if not off_regions:
         return _compress_with_preserve_patterns(text, effective_level, None, compiled_patterns, final_preserve_words)
 
-    parts: list[str] = []
+    off_parts: list[str] = []
     prev_end = 0
 
     for match in off_regions:
         start, end = match.start(), match.end()
         # Compress the text before this off-region
         if start > prev_end:
-            parts.append(_compress_with_preserve_patterns(
+            off_parts.append(_compress_with_preserve_patterns(
                 text[prev_end:start], effective_level, None, compiled_patterns, final_preserve_words
             ))
         # Keep the content between the tags verbatim (tags stripped)
-        parts.append(match.group(1))
+        off_parts.append(match.group(1))
         prev_end = end
 
     # Compress any remaining text after the last off-region
     if prev_end < len(text):
-        parts.append(_compress_with_preserve_patterns(
+        off_parts.append(_compress_with_preserve_patterns(
             text[prev_end:], effective_level, None, compiled_patterns, final_preserve_words
         ))
 
-    return "".join(parts)
+    return "".join(off_parts)
 
 
 def compress_with_stats(
@@ -851,7 +852,7 @@ def compress_with_stats(
     locale: str | None = None,
 ) -> CompressionResult:
     """Compress text and return detailed statistics about the compression.
-    
+
     Args:
         text: Input text to compress.
         level: Compression aggressiveness (1=light, 2=medium, 3=heavy, 4=maximum with sentence pruning).
@@ -860,24 +861,24 @@ def compress_with_stats(
         preserve_words: Optional set of custom words to preserve.
         markdown: Whether to use markdown-aware compression.
         locale: Optional language code (e.g., 'fr', 'es', 'de') to preserve locale-specific stop words.
-    
+
     Returns:
         CompressionResult with compressed text and detailed statistics.
-    
+
     Raises:
         ValueError: If a preserve_pattern string is not a valid regex, or if level is not 1-4.
     """
     # Validate level
     if not (1 <= level <= 4):
         raise ValueError(f"Compression level must be 1-4, got {level}")
-    
+
     # Apply sentence pruning for level 4
     if level == 4:
         text = _prune_sentences(text)
         effective_level = 3
     else:
         effective_level = level
-    
+
     # Compile custom patterns
     compiled_patterns: list[re.Pattern[str]] | None = None
     if preserve_patterns:
@@ -890,154 +891,154 @@ def compress_with_stats(
                     raise ValueError(f"Invalid regex pattern '{pattern}': {e}") from e
             else:
                 compiled_patterns.append(pattern)
-    
+
     # Merge locale-specific stop words with custom preserve words
     merged_preserve_words = preserve_words.copy() if preserve_words else set()
     if locale and locale in _LOCALE_STOP_WORDS:
         merged_preserve_words.update(_LOCALE_STOP_WORDS[locale])
     final_preserve_words = merged_preserve_words if merged_preserve_words else None
-    
+
     original_text = text
     original_length = len(original_text)
-    
+
     # Apply whitespace normalization (same as compress())
     if normalize:
         off_regions = list(_COMPRESSOR_OFF_RE.finditer(text))
-        
+
         if off_regions:
             parts: list[str] = []
             prev_end = 0
-            
+
             for match in off_regions:
                 start, end = match.start(), match.end()
                 if start > prev_end:
                     parts.append(_normalize_whitespace(text[prev_end:start]))
                 parts.append(match.group(0))
                 prev_end = end
-            
+
             if prev_end < len(text):
                 parts.append(_normalize_whitespace(text[prev_end:]))
-            
+
             text = "".join(parts)
         else:
             text = _normalize_whitespace(text)
-    
+
     # Track preserved spans
     collected_spans: list[tuple[int, int, str]] = []
-    
+
     # Route to markdown-aware compression if requested
     if markdown:
         off_regions = list(_COMPRESSOR_OFF_RE.finditer(text))
-        
+
         if not off_regions:
             compressed_text = _compress_markdown(
                 text, effective_level, collected_spans, compiled_patterns, final_preserve_words
             )
         else:
-            parts: list[str] = []
+            md_stat_parts: list[str] = []
             prev_end = 0
             compressed_offset = 0
-            
+
             for match in off_regions:
                 start, end = match.start(), match.end()
                 if start > prev_end:
-                    segment_spans: list[tuple[int, int, str]] = []
+                    md_seg_spans: list[tuple[int, int, str]] = []
                     compressed_segment = _compress_markdown(
-                        text[prev_end:start], effective_level, segment_spans, compiled_patterns, final_preserve_words
+                        text[prev_end:start], effective_level, md_seg_spans, compiled_patterns, final_preserve_words
                     )
-                    parts.append(compressed_segment)
-                    
+                    md_stat_parts.append(compressed_segment)
+
                     # Adjust span positions
-                    for span_start, span_end, kind in segment_spans:
+                    for span_start, span_end, kind in md_seg_spans:
                         collected_spans.append((
                             compressed_offset + span_start,
                             compressed_offset + span_end,
                             kind
                         ))
-                    
+
                     compressed_offset += len(compressed_segment)
-                
+
                 # Record COMPRESSOR_OFF span
                 content = match.group(1)
-                parts.append(content)
+                md_stat_parts.append(content)
                 collected_spans.append((compressed_offset, compressed_offset + len(content), "compressor_off"))
                 compressed_offset += len(content)
                 prev_end = end
-            
+
             if prev_end < len(text):
-                segment_spans = []
+                md_seg_spans_tail: list[tuple[int, int, str]] = []
                 compressed_segment = _compress_markdown(
-                    text[prev_end:], effective_level, segment_spans, compiled_patterns, final_preserve_words
+                    text[prev_end:], effective_level, md_seg_spans_tail, compiled_patterns, final_preserve_words
                 )
-                parts.append(compressed_segment)
-                
-                for span_start, span_end, kind in segment_spans:
+                md_stat_parts.append(compressed_segment)
+
+                for span_start, span_end, kind in md_seg_spans_tail:
                     collected_spans.append((
                         compressed_offset + span_start,
                         compressed_offset + span_end,
                         kind
                     ))
-            
-            compressed_text = "".join(parts)
+
+            compressed_text = "".join(md_stat_parts)
     else:
         # Handle [COMPRESSOR_OFF]...[/COMPRESSOR_OFF] regions (standard mode)
         off_regions = list(_COMPRESSOR_OFF_RE.finditer(text))
-        
+
         if not off_regions:
             compressed_text = _compress_with_preserve_patterns(
                 text, effective_level, collected_spans, compiled_patterns, final_preserve_words
             )
         else:
-            parts: list[str] = []
+            stat_parts: list[str] = []
             prev_end = 0
             compressed_offset = 0
-            
+
             for match in off_regions:
                 start, end = match.start(), match.end()
                 if start > prev_end:
-                    segment_spans: list[tuple[int, int, str]] = []
+                    seg_spans: list[tuple[int, int, str]] = []
                     compressed_segment = _compress_with_preserve_patterns(
-                        text[prev_end:start], effective_level, segment_spans, compiled_patterns, final_preserve_words
+                        text[prev_end:start], effective_level, seg_spans, compiled_patterns, final_preserve_words
                     )
-                    parts.append(compressed_segment)
-                    
+                    stat_parts.append(compressed_segment)
+
                     # Adjust span positions to account for offset
-                    for span_start, span_end, kind in segment_spans:
+                    for span_start, span_end, kind in seg_spans:
                         collected_spans.append((
                             compressed_offset + span_start,
                             compressed_offset + span_end,
                             kind
                         ))
-                    
+
                     compressed_offset += len(compressed_segment)
-                
+
                 # Record COMPRESSOR_OFF span
                 content = match.group(1)
-                parts.append(content)
+                stat_parts.append(content)
                 collected_spans.append((compressed_offset, compressed_offset + len(content), "compressor_off"))
                 compressed_offset += len(content)
                 prev_end = end
-            
+
             if prev_end < len(text):
-                segment_spans = []
+                seg_spans_tail: list[tuple[int, int, str]] = []
                 compressed_segment = _compress_with_preserve_patterns(
-                    text[prev_end:], effective_level, segment_spans, compiled_patterns, final_preserve_words
+                    text[prev_end:], effective_level, seg_spans_tail, compiled_patterns, final_preserve_words
                 )
-                parts.append(compressed_segment)
-                
-                for span_start, span_end, kind in segment_spans:
+                stat_parts.append(compressed_segment)
+
+                for span_start, span_end, kind in seg_spans_tail:
                     collected_spans.append((
                         compressed_offset + span_start,
                         compressed_offset + span_end,
                         kind
                     ))
-            
-            compressed_text = "".join(parts)
-    
+
+            compressed_text = "".join(stat_parts)
+
     compressed_length = len(compressed_text)
     ratio = compressed_length / original_length if original_length > 0 else 1.0
     savings_pct = (1 - ratio) * 100
-    
+
     # Convert collected spans to PreservedSpan objects
     preserved_spans = tuple(
         PreservedSpan(
@@ -1048,7 +1049,7 @@ def compress_with_stats(
         )
         for start, end, kind in collected_spans
     )
-    
+
     return CompressionResult(
         text=compressed_text,
         original_length=original_length,
@@ -1061,7 +1062,7 @@ def compress_with_stats(
 
 
 def compress_stream(
-    chunks: list[str] | tuple[str, ...],
+    chunks: Iterable[str],
     level: int = 2,
     normalize: bool = True,
     preserve_patterns: list[str | re.Pattern[str]] | None = None,
@@ -1069,13 +1070,13 @@ def compress_stream(
     markdown: bool = False,
     locale: str | None = None,
     buffer_size: int = 4096,
-):
+) -> Generator[str, None, None]:
     """Compress text from an iterable of chunks, yielding compressed chunks.
-    
+
     This function processes text in a streaming fashion, making it suitable for
     large files or data that arrives incrementally. Text is buffered until word
     boundaries to ensure proper compression.
-    
+
     Args:
         chunks: Iterable of text chunks to compress.
         level: Compression aggressiveness (1=light, 2=medium, 3=heavy).
@@ -1085,13 +1086,13 @@ def compress_stream(
         markdown: Whether to use markdown-aware compression.
         locale: Optional language code for locale-specific stop words.
         buffer_size: Target size for internal buffer before yielding (default: 4096).
-    
+
     Yields:
         Compressed text chunks.
-    
+
     Raises:
         ValueError: If a preserve_pattern string is not a valid regex.
-    
+
     Example:
         >>> chunks = ["This is a ", "test of streaming ", "compression."]
         >>> for compressed_chunk in compress_stream(chunks, level=2):
@@ -1099,25 +1100,25 @@ def compress_stream(
     """
     buffer = []
     buffer_len = 0
-    
+
     for chunk in chunks:
         if not chunk:
             continue
-        
+
         buffer.append(chunk)
         buffer_len += len(chunk)
-        
+
         # Process buffer when it reaches target size and we're at a word boundary
         if buffer_len >= buffer_size:
             text = "".join(buffer)
-            
+
             # Find last whitespace to split at word boundary
             last_space = -1
             for i in range(len(text) - 1, max(0, len(text) - 100), -1):
                 if text[i].isspace():
                     last_space = i + 1
                     break
-            
+
             if last_space > 0:
                 # Process up to the word boundary
                 to_process = text[:last_space]
@@ -1132,11 +1133,11 @@ def compress_stream(
                 )
                 if compressed:
                     yield compressed
-                
+
                 # Keep remainder in buffer
                 buffer = [text[last_space:]]
                 buffer_len = len(buffer[0])
-    
+
     # Flush remaining buffer
     if buffer:
         text = "".join(buffer)
@@ -1164,12 +1165,12 @@ def compress_file(
     locale: str | None = None,
     chunk_size: int = 8192,
     encoding: str = "utf-8",
-):
+) -> Generator[str, None, None]:
     """Compress a file in streaming fashion, yielding compressed chunks.
-    
+
     This function reads a file in chunks and compresses it incrementally,
     making it memory-efficient for large files.
-    
+
     Args:
         file_path: Path to the file to compress.
         level: Compression aggressiveness (1=light, 2=medium, 3=heavy).
@@ -1180,27 +1181,27 @@ def compress_file(
         locale: Optional language code for locale-specific stop words.
         chunk_size: Size of chunks to read from file (default: 8192).
         encoding: File encoding (default: utf-8).
-    
+
     Yields:
         Compressed text chunks.
-    
+
     Raises:
         ValueError: If a preserve_pattern string is not a valid regex.
         FileNotFoundError: If the file does not exist.
         IOError: If there's an error reading the file.
-    
+
     Example:
         >>> for chunk in compress_file("large_document.txt", level=2):
         ...     output_file.write(chunk)
     """
-    def read_chunks():
-        with open(file_path, "r", encoding=encoding) as f:
+    def read_chunks() -> Generator[str, None, None]:
+        with open(file_path, encoding=encoding) as f:
             while True:
                 chunk = f.read(chunk_size)
                 if not chunk:
                     break
                 yield chunk
-    
+
     yield from compress_stream(
         read_chunks(),
         level=level,
