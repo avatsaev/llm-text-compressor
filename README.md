@@ -16,6 +16,69 @@ Is perfectly understood as:
 
 The compressed version is **~20% smaller**, which adds up fast when you're feeding large contexts to LLMs.
 
+## Use Cases
+
+### Agent-to-Agent Communication
+
+In multi-agent architectures, agents constantly pass text to each other — task descriptions, observations, tool outputs, reasoning traces. Compressing these messages reduces token consumption across every hop:
+
+```python
+# Orchestrator compresses context before handing off to sub-agents
+task_context = gather_observations()  # Could be thousands of tokens
+compressed_context = compress(task_context, level=3)
+sub_agent.run(compressed_context)     # Same meaning, fewer tokens
+```
+
+### RAG Context Stuffing
+
+When injecting retrieved documents into an LLM prompt, you're often limited by the context window. Compress retrieved chunks to fit more documents into the same budget:
+
+```python
+retrieved_docs = vector_search(query, top_k=20)
+compressed_docs = [compress(doc, level=2) for doc in retrieved_docs]
+# Fit ~20% more context into the same token window
+prompt = build_prompt(query, compressed_docs)
+```
+
+### Tool Output Compression
+
+Agents calling tools (web search, code execution, API responses) often receive verbose output. Compress before feeding back into the agent loop:
+
+```python
+tool_output = web_search("latest Python release notes")  # Large HTML/text result
+compressed = compress(tool_output, level=4)               # Remove filler, trim aggressively
+agent.process(compressed)                                 # Agent still understands the content
+```
+
+### Chat History / Memory
+
+Long-running conversations accumulate large histories. Compress older messages to keep more context within the window:
+
+```python
+for msg in conversation_history[:-5]:  # Keep last 5 messages intact
+    msg["content"] = compress(msg["content"], level=2)
+```
+
+### Batch Processing & Cost Reduction
+
+When processing thousands of documents through LLM APIs, even 10% savings per request compounds:
+
+```
+10,000 requests × 2,000 tokens × $0.01/1K tokens = $200
+10,000 requests × 1,800 tokens × $0.01/1K tokens = $180  → $20 saved per batch
+```
+
+### Multi-Agent Reasoning Chains
+
+In chain-of-thought or tree-of-thought architectures, intermediate reasoning is passed between steps. Compress intermediate outputs without losing semantic content:
+
+```python
+# Each reasoning step compresses its output before passing forward
+step1_result = compress(agent_step_1(problem), level=2)
+step2_result = compress(agent_step_2(step1_result), level=2)
+final_answer = agent_step_3(step2_result)
+```
+
 ## Features
 
 - **4 compression levels** — from light (doubled letters) to maximum (sentence pruning)
