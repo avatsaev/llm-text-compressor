@@ -256,6 +256,38 @@ compress_file(file_path, level=2, chunk_size=8192, encoding="utf-8", ...) -> Gen
 
 See [SPECS.md](SPECS.md) for full technical specifications.
 
+## REST API
+
+A production-ready FastAPI REST API is included with Redis caching support:
+
+```bash
+# Using Docker Compose (includes Redis)
+docker compose up --build
+
+# API available at http://localhost:8000
+# Interactive docs at http://localhost:8000/docs
+```
+
+### API Features
+
+- **Redis caching** with configurable TTL for improved performance
+- **Batch compression** endpoint for processing multiple texts
+- **Streaming compression** for large documents
+- **Cache statistics** and monitoring endpoints
+- **Health checks** with Redis status
+- **OpenAPI/Swagger** documentation
+
+**Endpoints:**
+
+- `POST /compress` — Compress text with caching
+- `POST /compress/stats` — Compress with detailed statistics
+- `POST /compress/batch` — Compress multiple texts in one request
+- `POST /compress/stream` — Stream-compress large chunks
+- `GET /cache/stats` — View Redis cache statistics
+- `GET /health` — Health check with cache status
+
+See [api/README.md](api/README.md) for full API documentation.
+
 ## Development
 
 ```bash
