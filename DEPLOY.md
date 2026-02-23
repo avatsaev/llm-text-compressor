@@ -2,7 +2,33 @@
 
 Quick reference for publishing new versions to PyPI.
 
-## Prerequisites
+## Automatic Deployment (Recommended)
+
+The project uses GitHub Actions for automatic deployment:
+
+1. **Set up PyPI token** in GitHub repository secrets:
+   - Go to: https://github.com/avatsaev/llm-text-compressor/settings/secrets/actions
+   - Add secret: `PYPI_API_TOKEN` = your PyPI token
+
+2. **Push to main** branch:
+
+   ```bash
+   git push origin main
+   ```
+
+   The workflow automatically runs tests, builds, and publishes to PyPI.
+
+3. **Or create a version tag**:
+   ```bash
+   git tag v0.1.1
+   git push origin v0.1.1
+   ```
+
+The `.github/workflows/publish.yml` workflow handles everything automatically.
+
+## Manual Deployment
+
+### Prerequisites
 
 1. PyPI account with API token
 2. Get token from: https://pypi.org/manage/account/token/
