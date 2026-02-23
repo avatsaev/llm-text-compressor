@@ -706,7 +706,7 @@ def _compress_with_preserve_patterns(
 
 def compress(
     text: str,
-    level: int = 2,
+    level: int = 3,
     normalize: bool = True,
     preserve_patterns: list[str | re.Pattern[str]] | None = None,
     preserve_words: set[str] | None = None,
@@ -844,7 +844,7 @@ def compress(
 
 def compress_with_stats(
     text: str,
-    level: int = 2,
+    level: int = 3,
     normalize: bool = True,
     preserve_patterns: list[str | re.Pattern[str]] | None = None,
     preserve_words: set[str] | None = None,
@@ -1063,7 +1063,7 @@ def compress_with_stats(
 
 def compress_stream(
     chunks: Iterable[str],
-    level: int = 2,
+    level: int = 3,
     normalize: bool = True,
     preserve_patterns: list[str | re.Pattern[str]] | None = None,
     preserve_words: set[str] | None = None,
@@ -1157,7 +1157,7 @@ def compress_stream(
 
 def compress_file(
     file_path: str,
-    level: int = 2,
+    level: int = 3,
     normalize: bool = True,
     preserve_patterns: list[str | re.Pattern[str]] | None = None,
     preserve_words: set[str] | None = None,

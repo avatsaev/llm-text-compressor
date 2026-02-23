@@ -1,5 +1,7 @@
 # LLM Text Compressor
 
+[![Tests](https://github.com/avatsaev/llm-text-compressor/actions/workflows/test.yml/badge.svg)](https://github.com/avatsaev/llm-text-compressor/actions/workflows/test.yml)
+
 Remove characters from text while keeping it understandable by LLMs — save on inference costs at scale.
 
 **Zero dependencies. Deterministic. Preservation-first.**
@@ -243,15 +245,15 @@ Typical results across the included corpus (~14 KB of mixed content):
 
 ```python
 # Core compression
-compress(text, level=2, normalize=True, preserve_patterns=None,
+compress(text, level=3, normalize=True, preserve_patterns=None,
          preserve_words=None, markdown=False, locale=None) -> str
 
 # With statistics
 compress_with_stats(...) -> CompressionResult
 
 # Streaming
-compress_stream(chunks, level=2, buffer_size=4096, ...) -> Generator[str]
-compress_file(file_path, level=2, chunk_size=8192, encoding="utf-8", ...) -> Generator[str]
+compress_stream(chunks, level=3, buffer_size=4096, ...) -> Generator[str]
+compress_file(file_path, level=3, chunk_size=8192, encoding="utf-8", ...) -> Generator[str]
 ```
 
 See [SPECS.md](SPECS.md) for full technical specifications.

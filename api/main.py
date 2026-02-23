@@ -52,7 +52,7 @@ class CompressRequest(BaseModel):
     """Request body for compression endpoints."""
 
     text: str = Field(..., description="Text to compress")
-    level: int = Field(default=2, ge=1, le=4, description="Compression level (1-4)")
+    level: int = Field(default=3, ge=1, le=4, description="Compression level (1-4)")
     normalize: bool = Field(default=True, description="Normalize whitespace")
     preserve_patterns: list[str] | None = Field(
         default=None, description="Custom regex patterns to preserve"
@@ -115,7 +115,7 @@ class BatchRequest(BaseModel):
     """Request body for batch compression."""
 
     items: list[BatchItem] = Field(..., description="List of texts to compress")
-    level: int = Field(default=2, ge=1, le=4, description="Compression level (1-4)")
+    level: int = Field(default=3, ge=1, le=4, description="Compression level (1-4)")
     normalize: bool = Field(default=True, description="Normalize whitespace")
     preserve_patterns: list[str] | None = Field(default=None)
     preserve_words: list[str] | None = Field(default=None)
@@ -148,7 +148,7 @@ class StreamRequest(BaseModel):
     """Request body for streaming compression."""
 
     chunks: list[str] = Field(..., description="Text chunks to compress")
-    level: int = Field(default=2, ge=1, le=4)
+    level: int = Field(default=3, ge=1, le=4)
     normalize: bool = Field(default=True)
     preserve_patterns: list[str] | None = Field(default=None)
     preserve_words: list[str] | None = Field(default=None)

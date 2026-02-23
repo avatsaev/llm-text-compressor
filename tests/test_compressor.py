@@ -251,8 +251,8 @@ class TestPreserveStructuredData:
         result = compress(text)
         # JSON should be intact
         assert '{"status": "success", "data": {"id": 123}}' in result
-        # Surrounding text compressed (response -> rsponse, processing -> prcsng or prcesng)
-        assert ("rsponse" in result or "rspnse" in result) and ("prcsng" in result or "prcesng" in result)
+        # Surrounding text compressed at level 3 (response -> rspone, processing -> prcesg)
+        assert "rspone" in result and "prcesg" in result
 
     def test_json_array_preserved(self):
         text = "values are [1, 2, 3,  4, 5] in the array"
@@ -388,8 +388,8 @@ class TestCustomPreservePatterns:
         text = "fix issue JIRA-1234 in the understanding module"
         result = compress(text, preserve_patterns=[r"JIRA-\d+"])
         assert "JIRA-1234" in result
-        # Other text should be compressed
-        assert "undrstndng" in result or "undrstand" in result
+        # Other text should be compressed at level 3 (understanding -> undrsg)
+        assert "undrsg" in result
 
     def test_custom_pattern_stripe_key(self):
         text = "use key sk_live_abcd1234 for processing payments"
