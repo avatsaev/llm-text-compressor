@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "llm-text-compressor"
-version = "0.1.1"
+version = "0.1.2"
 description = "Remove characters from text while keeping it understandable for LLMs, saving on inference costs."
 readme = "README.md"
 license = "MIT"
