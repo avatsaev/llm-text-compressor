@@ -4,27 +4,28 @@ Quick reference for publishing new versions to PyPI.
 
 ## Automatic Deployment (Recommended)
 
-The project uses GitHub Actions for automatic deployment:
+The project uses GitHub Actions for automatic deployment on version tags:
 
 1. **Set up PyPI token** in GitHub repository secrets:
    - Go to: https://github.com/avatsaev/llm-text-compressor/settings/secrets/actions
    - Add secret: `PYPI_API_TOKEN` = your PyPI token
 
-2. **Push to main** branch:
+2. **Update version** in `pyproject.toml`:
 
-   ```bash
-   git push origin main
+   ```toml
+   version = "0.1.1"  # Increment version
    ```
 
-   The workflow automatically runs tests, builds, and publishes to PyPI.
-
-3. **Or create a version tag**:
+3. **Create and push a version tag**:
    ```bash
+   git add pyproject.toml
+   git commit -m "Bump version to 0.1.1"
    git tag v0.1.1
+   git push origin main
    git push origin v0.1.1
    ```
 
-The `.github/workflows/publish.yml` workflow handles everything automatically.
+The `.github/workflows/publish.yml` workflow will automatically run tests, build, and publish to PyPI when you push the tag.
 
 ## Manual Deployment
 
